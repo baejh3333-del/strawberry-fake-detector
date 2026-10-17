@@ -6,7 +6,7 @@
 
 [결과](#결과) · [모델 구조](#모델-구조) · [데이터 파이프라인](#데이터-파이프라인) · [시행착오](docs/lessons-learned.md) · [English](README.md)
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c) ![Backbone](https://img.shields.io/badge/backbone-DINOv3%20ViT--L%2F16-green) ![Accuracy](https://img.shields.io/badge/leaderboard%20accuracy-0.85-brightgreen) ![License](https://img.shields.io/badge/code-MIT-lightgrey)
+![Python](https://img.shields.io/badge/Python-3.10+-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c) ![Backbone](https://img.shields.io/badge/backbone-DINOv3%20ViT--L%2F16-green) ![Accuracy](https://img.shields.io/badge/leaderboard%20accuracy-0.87-brightgreen) ![License](https://img.shields.io/badge/code-MIT-lightgrey)
 
 <img src="assets/architecture.png" width="92%" alt="모델 구조">
 
@@ -18,9 +18,9 @@
 
 | | |
 |---|---|
-| **최종 점수** | 비공개 평가 524장(실제 262 / 가짜 262) **accuracy 0.85** |
+| **최종 점수** | 비공개 평가 524장(실제 262 / 가짜 262) **accuracy 0.87** |
 | **모델** | 311M 파라미터, 0.64 GB, Colab T4에서 524장 **152초** (제한: 5분 · 오프라인 · 1GB 이하) |
-| **핵심 아이디어** | 원본 해상도 조각 → 고정 DINOv3 → **생성 방식별 Expert**(attention pooling) + 전체 이미지 CNN |
+| **핵심 아이디어** | 원본 해상도 조각 → 고정 DINOv3 → **생성 방식별 Expert**(attention pooling) + 고주파 잔차까지 보는 전체 이미지 CNN |
 | **가장 쓸모 있던 발견** | 내부 validation 0.874, 비공개 평가 0.77. leave-one-generator-out 평가로 원인을 규명 |
 
 ## 결과
@@ -32,13 +32,14 @@
 | exp02 | 첫 본 학습 | acc 0.874 / AUROC 0.958 | 0.77 |
 | exp06 | 복제·국소 필터 라벨 재배정 | acc 0.875 | ≈ 0.75 |
 | exp11b (v3) | 생성 방식별 Expert 24개, 반응 없던 11방식 제외 | acc 0.885 / AUROC 0.964 | 0.83 |
-| **v5 (최종)** | 가중치 동일, 판정 문턱 p ≥ 0.05 (마지막 bias에 `+ln 19`) | acc 0.901 | **0.85** |
+| v5 | exp11b 가중치, 판정 문턱 p ≥ 0.05 (마지막 bias에 `+ln 19`) | acc 0.901 | 0.85 |
+| **v7 (최종)** | exp11b 설정 + Common CNN에 **고주파 잔차 입력**(exp16), 같은 문턱 이동 | acc 0.902 | **0.87** |
 
-구조 아이디어 7개(LayerNorm, top-k pooling, 고주파 입력, dropout, FFT 등)는 전부 잡음 수준이었습니다. 병목은 모델 용량이 아니라 **모델이 본 생성기의 종류**였습니다.
+내 검증 기준으로는 구조 아이디어 7개(LayerNorm, top-k pooling, 고주파 입력, dropout, FFT 등) 모두 잡음 수준을 넘지 못했습니다. 그중 하나인 **고주파 잔차 입력**(exp16)이 리더보드 최고 모델에 들어갔습니다. v7은 0.87, v5는 0.85였는데 검증은 둘을 같게 봤습니다(균형 정확도 0.814 vs 0.813). 이 차이는 524장 중 약 10장(표준오차 ≈ 1.5%p)이라 한 번의 비교로 효과를 입증하거나 부정할 수는 없습니다. 일관되게 남은 병목은 모델 용량이 아니라 **모델이 본 생성기의 종류**였습니다.
 
 <img src="assets/experiments.png" width="62%" alt="실험별 변화량">
 
-> 실험당 1회 실행(seed 반복 없음). 음영은 비슷한 실행 사이에서 보인 대략적인 잡음 수준(±0.005)이며 측정된 신뢰구간이 아닙니다. 전체 표: [docs/experiments.md](docs/experiments.md)
+> 실험당 1회 실행(seed 반복 없음). 음영은 비슷한 실행 사이에서 보인 대략적인 잡음 수준(±0.005)이며 측정된 신뢰구간이 아닙니다. 주황색은 최종 모델에 들어간 아이디어입니다. 전체 표: [docs/experiments.md](docs/experiments.md)
 
 ## 모델 구조
 
@@ -47,7 +48,7 @@
 | **원본 해상도 조각 12장, 축소 없음** | 블러·VAE 8픽셀 격자·편집 경계 같은 픽셀 단위 흔적은 축소하면 사라진다. |
 | **DINOv3 고정** | 생성기당 수백~천 장뿐이라 fine-tuning하면 *내가 만든* 생성기 지문을 외운다. |
 | **attention pooling** | 부분 편집은 일부 조각에만 흔적이 있어 평균하면 묻힌다. |
-| **전체 이미지 Common CNN** | 고주파 흔적(노이즈·JPEG)을 보완하고 입력 크기 제한이 없다. |
+| **전체 이미지 Common CNN** | 고주파 흔적(노이즈·JPEG)을 보완하고 입력 크기 제한이 없다. 최종 모델은 RGB에 고주파 잔차를 붙인 6채널을 입력한다. |
 | **생성 방식별 Expert + Gate** | 생성기마다 지문이 다르다. |
 
 학습: (1) Expert + Common CNN → (2) Gate → (3) 전체를 `BCE + 0.2·GateCE + 0.1·SupCon`으로 (SupCon은 같은 원본의 실제·가짜 쌍). 자세히: [docs/architecture.md](docs/architecture.md)

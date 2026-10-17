@@ -54,15 +54,15 @@ def architecture():
     ax.text(7.5, 5.95, 'Detector architecture', ha='center', fontsize=14, fontweight='bold')
     box(fig, ax, 0.2, 2.45, 2.2, 1.3, 'Input image\n1024 x 768\n(never resized)', '#fef3c7', AMBER)
     box(fig, ax, 3.1, 3.7, 2.0, 1.1, '12 tiles\n256 x 256', '#fde68a', AMBER)
-    box(fig, ax, 3.1, 0.95, 2.0, 1.4, 'Common CNN\nEfficientNet-B0\nfull image, fp32', '#dcfce7', GREEN)
+    box(fig, ax, 2.9, 0.75, 2.4, 1.8, 'Common CNN\nEfficientNet-B0\nfull image, fp32\nRGB + high-pass\nresidual (6 ch)', '#dcfce7', GREEN)
     box(fig, ax, 5.8, 3.5, 2.5, 1.5, 'DINOv3 ViT-L/16\nfrozen, 303M params\n3072 patch tokens', '#dbeafe', BLUE, bold=True)
     box(fig, ax, 9.0, 4.2, 2.3, 1.1, 'Gate\nattention pool + softmax', '#ede9fe', PURPLE)
     box(fig, ax, 9.0, 2.45, 2.3, 1.5, '24 Experts\nattention pool\n-> 64-d + score', '#ede9fe', PURPLE, bold=True)
     box(fig, ax, 11.9, 1.5, 1.5, 2.8, 'concat\n64 + 1 + 1280\n= 1345', GRAY, MUTED, bold=True)
     box(fig, ax, 13.8, 2.3, 1.1, 1.2, 'MLP\n256 -> 1\nsigmoid', '#fee2e2', RED, bold=True)
-    for p_, q_ in [((2.4, 3.3), (3.1, 4.25)), ((2.4, 2.9), (3.1, 1.65)), ((5.1, 4.25), (5.8, 4.25)),
+    for p_, q_ in [((2.4, 3.3), (3.1, 4.25)), ((2.4, 2.9), (2.9, 1.9)), ((5.1, 4.25), (5.8, 4.25)),
                    ((8.3, 4.6), (9.0, 4.75)), ((8.3, 3.9), (9.0, 3.2)), ((11.3, 4.75), (12.65, 4.3)),
-                   ((11.3, 3.2), (11.9, 3.2)), ((5.1, 1.7), (11.9, 1.9)), ((13.4, 2.9), (13.8, 2.9))]:
+                   ((11.3, 3.2), (11.9, 3.2)), ((5.3, 1.7), (11.9, 1.9)), ((13.4, 2.9), (13.8, 2.9))]:
         arrow(ax, p_, q_)
     ax.text(14.35, 1.85, 'P(fake)', fontsize=12, ha='center', color=RED, fontweight='bold')
     ax.text(7.5, 0.1, '311M parameters   |   0.64 GB   |   152 s for 524 images on a Colab T4',
@@ -99,15 +99,15 @@ def pipeline():
 
 def results():
     fig, ax = plt.subplots(figsize=(9.5, 5.4))
-    names = ['exp02\nfirst full run', 'exp06\nlabel re-assign', 'exp11b (v3)\n24 Experts', 'v5 (final)\nthreshold 0.05']
-    val = [0.874, 0.875, 0.885, 0.901]
-    lb = [0.77, 0.75, 0.83, 0.85]
-    x = list(range(4)); w = 0.36
+    names = ['exp02\nfirst full run', 'exp06\nlabel re-assign', 'exp11b (v3)\n24 Experts', 'v5\nthreshold 0.05', 'v7 (final)\n+ high-pass input']
+    val = [0.874, 0.875, 0.885, 0.901, 0.902]
+    lb = [0.77, 0.75, 0.83, 0.85, 0.87]
+    x = list(range(5)); w = 0.36
     b1 = ax.bar([i - w / 2 for i in x], val, w, color='#93c5fd', label='own validation')
     b2 = ax.bar([i + w / 2 for i in x], lb, w, color=BLUE, label='leaderboard (hidden 524 images)')
     for b in list(b1) + list(b2):
         ax.text(b.get_x() + b.get_width() / 2, b.get_height() + 0.004, f'{b.get_height():.3f}', ha='center', fontsize=9)
-    ax.set_xticks(x); ax.set_xticklabels(names, fontsize=9.5); ax.set_ylim(0.6, 0.96)
+    ax.set_xticks(x); ax.set_xticklabels(names, fontsize=9); ax.set_ylim(0.6, 0.96)
     ax.set_ylabel('accuracy'); ax.legend(loc='upper left', frameon=False, fontsize=9.5)
     ax.spines[['top', 'right']].set_visible(False)
     ax.set_title('Own validation overestimates the hidden test', fontsize=12, fontweight='bold', pad=12)
@@ -119,20 +119,21 @@ def results():
 def experiments():
     items = [('exp08  fusion LayerNorm', 0.001), ('exp09  8 type-level Experts', -0.002),
              ('exp13  Common/Expert weighting', 0.004), ('exp15  top-k pooling', -0.010),
-             ('exp16  high-pass residual input', 0.003), ('exp17  feature dropout', -0.002),
+             ('exp16  high-pass residual input (in v7)', 0.003), ('exp17  feature dropout', -0.002),
              ('exp18  FFT spectrum features', 0.006), ('v5  decision threshold p>=0.05', 0.016)]
     fig, ax = plt.subplots(figsize=(9.5, 5.4))
     ys = list(range(len(items)))[::-1]
     ax.axvspan(-0.005, 0.005, color=GRAY, alpha=0.8, label='rough noise level (about 0.005, not a confidence interval)')
     for y, (n, d) in zip(ys, items):
-        ax.barh(y, d, color=GREEN if n.startswith('v5') else '#9ca3af', height=0.6)
+        ax.barh(y, d, color=GREEN if n.startswith('v5') else (AMBER if n.startswith('exp16') else '#9ca3af'), height=0.6)
         ax.text(0.0215, y, f'{d:+.3f}', va='center', ha='right', fontsize=9.5,
                 fontweight='bold' if n.startswith('v5') else 'normal', color=GREEN if n.startswith('v5') else INK)
     ax.set_yticks(ys); ax.set_yticklabels([n for n, _ in items], fontsize=9.5)
     ax.axvline(0, color=INK, lw=1); ax.set_xlim(-0.02, 0.0225); ax.set_ylim(-0.7, len(items) + 0.2)
     ax.set_xlabel('change in own validation metric vs. its baseline (accuracy)', fontsize=9.5)
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.14), frameon=False, fontsize=9.5); ax.spines[['top', 'right']].set_visible(False)
-    ax.set_title('Seven architecture ideas stayed within noise; the decision rule gave the gain',
+    from matplotlib.patches import Patch
+    ax.legend(handles=[Patch(color=GRAY, label='rough noise level (about 0.005, not a confidence interval)'), Patch(color=AMBER, label='idea used in the final model (v7)'), Patch(color=GREEN, label='decision-threshold shift')], loc='upper center', bbox_to_anchor=(0.5, -0.14), frameon=False, fontsize=9, ncol=1); ax.spines[['top', 'right']].set_visible(False)
+    ax.set_title('On own validation, architecture ideas stayed within noise; the threshold shift gave the gain',
                  fontsize=12, fontweight='bold', pad=12)
     fig.tight_layout()
     save(fig, 'experiments.png')

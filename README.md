@@ -6,7 +6,7 @@
 
 [Results](#results) · [Architecture](#architecture) · [Data pipeline](#data-pipeline) · [What went wrong](docs/lessons-learned.md) · [한국어](README.ko.md)
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c) ![Backbone](https://img.shields.io/badge/backbone-DINOv3%20ViT--L%2F16-green) ![Accuracy](https://img.shields.io/badge/leaderboard%20accuracy-0.85-brightgreen) ![License](https://img.shields.io/badge/code-MIT-lightgrey)
+![Python](https://img.shields.io/badge/Python-3.10+-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c) ![Backbone](https://img.shields.io/badge/backbone-DINOv3%20ViT--L%2F16-green) ![Accuracy](https://img.shields.io/badge/leaderboard%20accuracy-0.87-brightgreen) ![License](https://img.shields.io/badge/code-MIT-lightgrey)
 
 <img src="assets/architecture.png" width="92%" alt="Detector architecture">
 
@@ -18,9 +18,9 @@ Built for the 1st National Agricultural AI Competition (Korea, image mission): c
 
 | | |
 |---|---|
-| **Final score** | **0.85 accuracy** on the hidden 524-image test (262 real / 262 fake) |
+| **Final score** | **0.87 accuracy** on the hidden 524-image test (262 real / 262 fake) |
 | **Model** | 311M parameters, 0.64 GB, **152 s** for 524 images on a Colab T4 (limit: 5 min, offline, ≤ 1 GB) |
-| **Key idea** | Tiles at native resolution → frozen DINOv3 → attention-pooled **Experts per generator** + full-image CNN |
+| **Key idea** | Tiles at native resolution → frozen DINOv3 → attention-pooled **Experts per generator** + a full-image CNN that also sees a high-pass residual |
 | **Most useful finding** | Own validation said 0.874, the hidden test said 0.77. Leave-one-generator-out evaluation explained why. |
 
 ## Results
@@ -32,13 +32,14 @@ Built for the 1st National Agricultural AI Competition (Korea, image mission): c
 | exp02 | first full training | acc 0.874 / AUROC 0.958 | 0.77 |
 | exp06 | re-assign "clone / local filter" labels | acc 0.875 | ≈ 0.75 |
 | exp11b (v3) | one Expert per generation method (24), drop 11 inert methods | acc 0.885 / AUROC 0.964 | 0.83 |
-| **v5 (final)** | same weights, decision threshold p ≥ 0.05 (`+ln 19` on the last bias) | acc 0.901 | **0.85** |
+| v5 | exp11b weights, decision threshold p ≥ 0.05 (`+ln 19` on the last bias) | acc 0.901 | 0.85 |
+| **v7 (final)** | exp11b setup + **high-pass residual input** to the Common CNN (exp16), same threshold shift | acc 0.902 | **0.87** |
 
-Seven architecture ideas (LayerNorm fusion, top-k pooling, high-pass input, dropout, FFT features, …) all stayed within noise. The bottleneck was **how many generators the model had seen**, not model capacity.
+On my own validation, none of seven architecture ideas (LayerNorm fusion, top-k pooling, high-pass input, dropout, FFT features, …) moved the metric beyond noise. One of them, the **high-pass residual input** (exp16), ended up in the best leaderboard model: v7 scored 0.87 vs. 0.85 for v5, although validation rated the two the same (balanced accuracy 0.814 vs. 0.813). That gap is about 10 of 524 images (standard error ≈ 1.5 pp), so one comparison neither proves nor refutes the idea. What stayed consistent was the bottleneck: **how many generators the model had seen**, not model capacity.
 
 <img src="assets/experiments.png" width="62%" alt="Experiment deltas">
 
-> One run per experiment (no seed repeats). The shaded band is a rough noise level of ±0.005 seen between comparable runs, not a measured confidence interval. Full table: [docs/experiments.md](docs/experiments.md).
+> One run per experiment (no seed repeats). The shaded band is a rough noise level of ±0.005 seen between comparable runs, not a measured confidence interval. Amber = the idea that ended up in the final model. Full table: [docs/experiments.md](docs/experiments.md).
 
 ## Architecture
 
@@ -47,7 +48,7 @@ Seven architecture ideas (LayerNorm fusion, top-k pooling, high-pass input, drop
 | **12 native-resolution tiles, no resizing** | Blur, VAE 8-px grids and edit boundaries are pixel-level traces that downscaling destroys. |
 | **Frozen DINOv3** | A few thousand images per generator: fine-tuning would memorize *my* generators' fingerprints. |
 | **Attention pooling** | A local edit lives in a few tiles; mean pooling washes it out. |
-| **Common CNN on the full image** | Covers high-frequency traces (noise, JPEG) and has no input-size limit. |
+| **Common CNN on the full image** | Covers high-frequency traces (noise, JPEG) and has no input-size limit. The final model feeds it RGB plus a high-pass residual (6 channels). |
 | **One Expert per generation method + Gate** | Different generators leave different fingerprints. |
 
 Training: (1) Experts + Common CNN → (2) Gate → (3) everything, with `BCE + 0.2·GateCE + 0.1·SupCon` (SupCon pairs a real photo with fakes made from it). Details: [docs/architecture.md](docs/architecture.md).
