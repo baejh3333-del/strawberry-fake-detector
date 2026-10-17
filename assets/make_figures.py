@@ -140,5 +140,36 @@ def experiments():
     save(fig, 'experiments.png')
 
 
+def social_preview():
+    """1280x640 card for GitHub Settings > Social preview (upload by hand; no API)."""
+    fig = plt.figure(figsize=(12.8, 6.4), dpi=100)
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, 12.8); ax.set_ylim(0, 6.4); ax.axis('off')
+    ax.add_patch(FancyBboxPatch((0, 0), 12.8, 6.4, boxstyle='square,pad=0', fc='#f8fafc', ec='none'))
+    ax.add_patch(FancyBboxPatch((0, 0), 0.28, 6.4, boxstyle='square,pad=0', fc=RED, ec='none'))
+    ax.text(0.8, 5.25, 'Strawberry Fake Detector', fontsize=40, fontweight='bold', color=INK, va='center')
+    ax.text(0.8, 4.5, 'Real or AI-generated? DINOv3 + Mixture-of-Experts', fontsize=19, color=MUTED, va='center')
+    stats = [('0.87', 'accuracy on the\nhidden 524-image test', GREEN),
+             ('24', 'generator-specific\nExperts', PURPLE),
+             ('152 s', '524 images on a\nColab T4 (limit 5 min)', BLUE)]
+    for i, (big, small, c) in enumerate(stats):
+        x = 0.8 + i * 3.85
+        ax.add_patch(FancyBboxPatch((x, 2.0), 3.45, 1.95, boxstyle='round,pad=0,rounding_size=0.12', fc='white', ec=c, lw=2))
+        ax.text(x + 0.3, 3.35, big, fontsize=34, fontweight='bold', color=c, va='center')
+        ax.text(x + 0.3, 2.55, small, fontsize=13, color=INK, va='center', linespacing=1.35)
+    chips = ['12 tiles', 'frozen DINOv3', 'Experts + Gate', 'P(fake)']
+    x = 0.8
+    for i, label in enumerate(chips):
+        w = 0.15 * len(label) + 0.6
+        ax.add_patch(FancyBboxPatch((x, 0.75), w, 0.6, boxstyle='round,pad=0,rounding_size=0.1', fc='#e0e7ff' if i < 3 else '#fee2e2', ec='none'))
+        ax.text(x + w / 2, 1.05, label, fontsize=13, ha='center', va='center', color=INK, fontweight='bold')
+        x += w
+        if i < len(chips) - 1:
+            ax.text(x + 0.2, 1.05, '>', fontsize=16, ha='center', va='center', color=MUTED)
+            x += 0.4
+    ax.text(12.4, 0.35, 'github.com/baejh3333-del/strawberry-fake-detector', fontsize=11, color=MUTED, ha='right', va='center')
+    fig.savefig(OUT / 'social-preview.png', dpi=100, facecolor='#f8fafc')
+    plt.close(fig)
+
+
 if __name__ == '__main__':
-    architecture(); pipeline(); results(); experiments(); print('saved')
+    architecture(); pipeline(); results(); experiments(); social_preview(); print('saved')
