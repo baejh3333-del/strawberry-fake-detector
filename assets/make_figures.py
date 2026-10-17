@@ -56,14 +56,15 @@ def architecture():
     box(fig, ax, 3.1, 3.7, 2.0, 1.1, '12 tiles\n256 x 256', '#fde68a', AMBER)
     box(fig, ax, 2.9, 0.75, 2.4, 1.8, 'Common CNN\nEfficientNet-B0\nfull image, fp32\nRGB + high-pass\nresidual (6 ch)', '#dcfce7', GREEN)
     box(fig, ax, 5.8, 3.5, 2.5, 1.5, 'DINOv3 ViT-L/16\nfrozen, 303M params\n3072 patch tokens', '#dbeafe', BLUE, bold=True)
-    box(fig, ax, 9.0, 4.2, 2.3, 1.1, 'Gate\nattention pool + softmax', '#ede9fe', PURPLE)
-    box(fig, ax, 9.0, 2.45, 2.3, 1.5, '24 Experts\nattention pool\n-> 64-d + score', '#ede9fe', PURPLE, bold=True)
+    box(fig, ax, 9.0, 4.5, 2.3, 1.1, 'Gate\nattention pool + softmax', '#ede9fe', PURPLE)
+    box(fig, ax, 9.0, 2.45, 2.3, 1.5, '24 Experts\ngate-weighted sum\n-> 64-d + score', '#ede9fe', PURPLE, bold=True)
     box(fig, ax, 11.9, 1.5, 1.5, 2.8, 'concat\n64 + 1 + 1280\n= 1345', GRAY, MUTED, bold=True)
     box(fig, ax, 13.8, 2.3, 1.1, 1.2, 'MLP\n256 -> 1\nsigmoid', '#fee2e2', RED, bold=True)
     for p_, q_ in [((2.4, 3.3), (3.1, 4.25)), ((2.4, 2.9), (2.9, 1.9)), ((5.1, 4.25), (5.8, 4.25)),
-                   ((8.3, 4.6), (9.0, 4.75)), ((8.3, 3.9), (9.0, 3.2)), ((11.3, 4.75), (12.65, 4.3)),
+                   ((8.3, 4.7), (9.0, 5.0)), ((8.3, 3.9), (9.0, 3.2)), ((10.15, 4.5), (10.15, 3.95)),
                    ((11.3, 3.2), (11.9, 3.2)), ((5.3, 1.7), (11.9, 1.9)), ((13.4, 2.9), (13.8, 2.9))]:
         arrow(ax, p_, q_)
+    ax.text(10.45, 4.2, 'mixing weights', fontsize=9, color=MUTED, ha='left', va='center')
     ax.text(14.35, 1.85, 'P(fake)', fontsize=12, ha='center', color=RED, fontweight='bold')
     ax.text(7.5, 0.1, '311M parameters   |   0.64 GB   |   152 s for 524 images on a Colab T4',
             ha='center', fontsize=10.5, color=MUTED)
