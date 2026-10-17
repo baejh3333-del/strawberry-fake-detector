@@ -1,0 +1,13 @@
+# Versions of the competition scoring environment (inference); training used Colab defaults.
+torch>=2.1
+torchvision
+timm>=1.0
+transformers>=4.50
+safetensors
+pillow
+numpy
+opencv-python
+scikit-learn
+pandas
+# data_pipeline/ extras (generation only, not needed for inference):
+# diffusers, accelerate, sentencepiece

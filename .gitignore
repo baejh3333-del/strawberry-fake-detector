@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+.vscode/
+.DS_Store
+Thumbs.db
+.claude/
+# data and weights are never committed
+data/
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.pt
+*.pth
+*.safetensors
+*.keras
+*.h5
+*.onnx
+*.zip
+*.pdf
+*.csv
+*.xlsx
