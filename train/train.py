@@ -488,7 +488,7 @@ def main():
     ap.add_argument('--common_highpass', type=float, default=0.0, help='Common CNN 입력에 고주파 잔차(RGB − 3×3 평균)를 gain배 해 3채널 더 붙임(입력 6채널). 0=끔(기본), 예: 8. 블러·노이즈·인페인팅 경계 같은 미세 흔적 대응. config.json의 common.highpass에도 기록된다')
     ap.add_argument('--holdout', default='', help='leave-one-generator-out: 쉼표로 구분한 generator 이름 앞부분(예: sdxl-img2img). 이 가짜를 학습에서 통째로 뺀다 (검증 표에는 그대로 남아 처음 보는 생성기 점수가 나온다)')
     ap.add_argument('--family_map', default='none', choices=list(FAMILY_MAPS), help='가짜를 어느 Expert가 맡을지 정하는 규칙(목록표는 안 고치고 읽을 때 다시 정함). none=목록표 그대로 Expert 5개 / type8=대회 유형 기준 Expert 8개 (exp09) / gen24=생성 방식마다 Expert 24개 (exp10, 분석용). 내보내는 config.json의 n_experts도 맞춰 쓴다')
-    ap.add_argument('--new_real_boost', type=float, default=1.0, help="prepare_union.py로 합친 새 자료(group이 'n:'로 시작)의 실제 사진을 뽑을 확률 배수 (기본 1 = 기존과 같음). 새 실제 사진만 늘려 이어서 학습할 때 4 안팎")
+    ap.add_argument('--new_real_boost', type=float, default=1.0, help="추가 자료로 합친 새 자료(group이 'n:'로 시작)의 실제 사진을 뽑을 확률 배수 (기본 1 = 기존과 같음). 새 실제 사진만 늘려 이어서 학습할 때 4 안팎")
     args = ap.parse_args()
     NEW_REAL_BOOST = args.new_real_boost
 

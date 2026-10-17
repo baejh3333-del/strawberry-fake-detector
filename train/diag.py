@@ -168,7 +168,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--data', default=''); ap.add_argument('--local_cache', default='')
     ap.add_argument('--weights', default='', help='config.json + weights.safetensors가 있는 폴더 (예: runs/full1)')
-    ap.add_argument('--split', default='val', choices=['val', 'train', 'all', 'extra'], help="extra = 학습·검증에 안 쓰고 따로 둔 '실제 오탐 점검용' 사진(prepare_union.py가 만든 split='extra')")
+    ap.add_argument('--split', default='val', choices=['val', 'train', 'all', 'extra'], help="extra = 학습·검증에 안 쓰고 따로 둔 '실제 오탐 점검용' 사진(추가 실제 사진을 합치는 스크립트가 만든 split='extra')")
     ap.add_argument('--only_generator', default='', help='쉼표로 구분한 generator 앞부분. 주면 그 가짜 전부(train+val) + val 실제만 테스트 (leave-one-generator-out용)')
     ap.add_argument('--per_generator', type=int, default=0, help='0이면 전부. 주면 생성기마다 이만큼만(학습셋은 60 정도 권장)')
     ap.add_argument('--batch', type=int, default=8); ap.add_argument('--workers', type=int, default=2)
