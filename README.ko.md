@@ -34,11 +34,11 @@
 | exp11b (v3) | 생성 방식별 Expert 24개, 반응 없던 11방식 제외 | acc 0.885 / AUROC 0.964 | 0.83 |
 | **v5 (최종)** | 가중치 동일, 판정 문턱 p ≥ 0.05 (마지막 bias에 `+ln 19`) | acc 0.901 | **0.85** |
 
-이후의 구조 아이디어 7개(LayerNorm, top-k pooling, 고주파 입력, dropout, FFT 등)는 전부 잡음 수준이었습니다. 병목은 모델 용량이 아니라 **모델이 본 생성기의 종류**였습니다.
+구조 아이디어 7개(LayerNorm, top-k pooling, 고주파 입력, dropout, FFT 등)는 전부 잡음 수준이었습니다. 병목은 모델 용량이 아니라 **모델이 본 생성기의 종류**였습니다.
 
 <img src="assets/experiments.png" width="62%" alt="실험별 변화량">
 
-> 실험당 seed 1개. 음영은 관측된 실행 간 잡음(≈ 0.005). 전체 표: [docs/experiments.md](docs/experiments.md)
+> 실험당 1회 실행(seed 반복 없음). 음영은 비슷한 실행 사이에서 보인 대략적인 잡음 수준(±0.005)이며 측정된 신뢰구간이 아닙니다. 전체 표: [docs/experiments.md](docs/experiments.md)
 
 ## 모델 구조
 
@@ -70,6 +70,8 @@ python tools/smoke_test_submission.py
 python train/train.py --data <DATA_DIR> --pretrained <PRETRAINED_DIR> --out <RUN_DIR> --stage all --family_map gen24
 ```
 
+> **참고:** `submission/model/config.json`은 기본 템플릿(Expert 5개)입니다. `--family_map gen24`로 학습하면 내보내는 config에 `n_experts: 24`가 기록되며, 최종 모델이 이 설정이었습니다.
+>
 > **포함하지 않은 것:** 학습 이미지, 대회 제공 데이터, 학습된 가중치. 실제 사진은 [AI Hub](https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=71451)(본인 활용만, 재배포 금지)에서 받고, 가짜는 `data_pipeline/`으로 다시 생성합니다. DINOv3 백본은 [DINOv3 License](submission/model/LICENSE_DINOv3.md)에 따라 별도로 내려받습니다.
 
 ## 저장소 구조

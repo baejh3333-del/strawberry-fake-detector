@@ -34,11 +34,11 @@ Built for the 1st National Agricultural AI Competition (Korea, image mission): c
 | exp11b (v3) | one Expert per generation method (24), drop 11 inert methods | acc 0.885 / AUROC 0.964 | 0.83 |
 | **v5 (final)** | same weights, decision threshold p ≥ 0.05 (`+ln 19` on the last bias) | acc 0.901 | **0.85** |
 
-Seven later architecture ideas (LayerNorm fusion, top-k pooling, high-pass input, dropout, FFT features, …) all stayed within noise. The bottleneck was **how many generators the model had seen**, not model capacity.
+Seven architecture ideas (LayerNorm fusion, top-k pooling, high-pass input, dropout, FFT features, …) all stayed within noise. The bottleneck was **how many generators the model had seen**, not model capacity.
 
 <img src="assets/experiments.png" width="62%" alt="Experiment deltas">
 
-> Single seed per experiment; the shaded band is the observed run-to-run noise (≈ 0.005). Full table: [docs/experiments.md](docs/experiments.md).
+> One run per experiment (no seed repeats). The shaded band is a rough noise level of ±0.005 seen between comparable runs, not a measured confidence interval. Full table: [docs/experiments.md](docs/experiments.md).
 
 ## Architecture
 
@@ -70,6 +70,8 @@ python tools/smoke_test_submission.py
 python train/train.py --data <DATA_DIR> --pretrained <PRETRAINED_DIR> --out <RUN_DIR> --stage all --family_map gen24
 ```
 
+> **Note:** `submission/model/config.json` is the default template (5 Experts). Training with `--family_map gen24` writes `n_experts: 24` into the exported config, which is what the final model used.
+>
 > **Not included:** training images, the contest data and trained weights. Real photos come from [AI Hub](https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=71451) (personal-use terms, no redistribution); fakes are regenerated with `data_pipeline/`. The DINOv3 backbone is downloaded separately under the [DINOv3 License](submission/model/LICENSE_DINOv3.md).
 
 ## Repository layout

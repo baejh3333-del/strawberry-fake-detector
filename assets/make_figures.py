@@ -123,7 +123,7 @@ def experiments():
              ('exp18  FFT spectrum features', 0.006), ('v5  decision threshold p>=0.05', 0.016)]
     fig, ax = plt.subplots(figsize=(9.5, 5.4))
     ys = list(range(len(items)))[::-1]
-    ax.axvspan(-0.005, 0.005, color=GRAY, alpha=0.8, label='seed-to-seed noise (about 0.005)')
+    ax.axvspan(-0.005, 0.005, color=GRAY, alpha=0.8, label='rough noise level (about 0.005, not a confidence interval)')
     for y, (n, d) in zip(ys, items):
         ax.barh(y, d, color=GREEN if n.startswith('v5') else '#9ca3af', height=0.6)
         ax.text(0.0215, y, f'{d:+.3f}', va='center', ha='right', fontsize=9.5,
