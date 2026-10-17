@@ -1,23 +1,36 @@
 <div align="center">
 
-# Strawberry Fake Detector
+<img src="assets/social-preview.png" width="100%" alt="Strawberry Fake Detector: real or AI-generated?">
 
-**Real or AI-generated? A DINOv3 + Mixture-of-Experts detector for greenhouse strawberry photos**
-
-[Results](#results) · [Architecture](#architecture) · [Data pipeline](#data-pipeline) · [What went wrong](docs/lessons-learned.md) · [한국어](README.ko.md)
+[Overview](#overview) · [Results](#results) · [Architecture](#architecture) · [Data pipeline](#data-pipeline) · [What went wrong](docs/lessons-learned.md) · [한국어](README.ko.md)
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c) ![Backbone](https://img.shields.io/badge/backbone-DINOv3%20ViT--L%2F16-green) ![Accuracy](https://img.shields.io/badge/leaderboard%20accuracy-0.87-brightgreen) ![License](https://img.shields.io/badge/code-MIT-lightgrey)
 
-<img src="assets/architecture.png" width="92%" alt="Detector architecture">
-
 </div>
 
-## TL;DR
+## Overview
 
-Built for the 1st National Agricultural AI Competition (Korea, image mission): classify a strawberry photo as **real (0)** or **generated / composited / edited (1)**. No training data was provided, so I built the fake-image generation pipeline first, then the model. Two beginners, four weeks.
+Generative AI has made crop photos easy to fabricate or retouch, which weakens the trust we can place in image-based agricultural records. This project tackles a narrow, testable version of that problem, as posed by the 1st National Agricultural AI Competition (Korea, image mission): *is this greenhouse strawberry photo a **real photograph (0)** or **generated / composited / edited (1)**?*
+
+**Why it is hard**
+
+- **No training data.** Only 21 example images were released, so the whole training set had to be built from scratch.
+- **Six kinds of fakes**, from fully generated images to local edits that change only a few percent of a photo.
+- **Unknown generators.** The test fakes come from methods the model has never seen, so scores on my own validation set overestimated the hidden test (0.874 vs. 0.77 at first).
+- **Hard runtime limits.** Offline inference, 5 minutes for 524 images on a T4, ≤ 1 GB.
+
+**What this repository contributes**
+
+1. A reproducible pipeline that turns real photos into every kind of fake with 15+ generators and filters, giving a training pool of about 17k images ([`data_pipeline/`](data_pipeline)).
+2. A detector that keeps pixel-level traces (native-resolution tiles and a frozen DINOv3) and models generator-specific fingerprints (Experts + Gate) next to a full-image CNN.
+3. An evaluation protocol (leave-one-generator-out, plant-level splits) that explains the gap between own validation and the hidden test.
+4. A candid log of what did *not* work and why ([docs/lessons-learned.md](docs/lessons-learned.md)).
+
+## At a glance
 
 | | |
 |---|---|
+| **Project** | Two deep-learning beginners, four weeks (2026-09-21 to 10-16) |
 | **Final score** | **0.87 accuracy** on the hidden 524-image test (262 real / 262 fake) |
 | **Model** | 311M parameters, 0.64 GB, **152 s** for 524 images on a Colab T4 (limit: 5 min, offline, ≤ 1 GB) |
 | **Key idea** | Tiles at native resolution → frozen DINOv3 → attention-pooled **Experts per generator** + a full-image CNN that also sees a high-pass residual |
@@ -42,6 +55,8 @@ On my own validation, none of seven architecture ideas (LayerNorm fusion, top-k 
 > One run per experiment (no seed repeats). The shaded band is a rough noise level of ±0.005 seen between comparable runs, not a measured confidence interval. Amber = the idea that ended up in the final model. Full table: [docs/experiments.md](docs/experiments.md).
 
 ## Architecture
+
+<img src="assets/architecture.png" width="92%" alt="Detector architecture">
 
 | Design choice | Why |
 |---|---|

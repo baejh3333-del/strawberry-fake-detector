@@ -1,23 +1,36 @@
 <div align="center">
 
-# Strawberry Fake Detector
+<img src="assets/social-preview.png" width="100%" alt="Strawberry Fake Detector: 실제인가, AI 생성인가?">
 
-**실제인가, AI 생성인가? 딸기 시설재배 사진을 판별하는 DINOv3 + Mixture-of-Experts detector**
-
-[결과](#결과) · [모델 구조](#모델-구조) · [데이터 파이프라인](#데이터-파이프라인) · [시행착오](docs/lessons-learned.md) · [English](README.md)
+[개요](#개요) · [결과](#결과) · [모델 구조](#모델-구조) · [데이터 파이프라인](#데이터-파이프라인) · [시행착오](docs/lessons-learned.md) · [English](README.md)
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c) ![Backbone](https://img.shields.io/badge/backbone-DINOv3%20ViT--L%2F16-green) ![Accuracy](https://img.shields.io/badge/leaderboard%20accuracy-0.87-brightgreen) ![License](https://img.shields.io/badge/code-MIT-lightgrey)
 
-<img src="assets/architecture.png" width="92%" alt="모델 구조">
-
 </div>
+
+## 개요
+
+생성형 AI 때문에 작물 사진을 만들거나 고치기가 쉬워지면서, 사진에 기댄 농업 기록을 믿기 어려워지고 있습니다. 이 프로젝트는 그 문제를 좁혀서 검증 가능한 형태로 다룹니다. 제1회 전국 농과계 대학 농업 AI 경진대회(이미지 미션)의 과제로, *이 딸기 시설재배 사진이 **실제 촬영(0)** 인지 **생성·합성·변형(1)** 인지* 가르는 이진 분류입니다.
+
+**왜 어려운가**
+
+- **학습 데이터가 없다.** 공개된 예시 이미지는 21장뿐이라 학습 데이터를 처음부터 직접 만들어야 했습니다.
+- **가짜가 6종류**입니다. 전체를 생성한 이미지부터 사진의 몇 %만 바꾸는 국소 편집까지 있습니다.
+- **처음 보는 생성기.** 평가용 가짜는 모델이 본 적 없는 방식으로 만들어져, 내 validation 점수가 비공개 평가를 과대평가했습니다(처음 0.874 vs 0.77).
+- **엄격한 실행 제한.** 오프라인 추론, T4에서 524장 5분 이내, 1GB 이하.
+
+**이 저장소가 주는 것**
+
+1. 실제 사진을 15종 이상의 생성기·필터로 모든 종류의 가짜로 바꾸는 재현 가능한 파이프라인. 학습 풀은 약 1.7만 장입니다 ([`data_pipeline/`](data_pipeline)).
+2. 픽셀 단위 흔적을 지키는 구조(원본 해상도 조각 + 고정 DINOv3)와, 생성기별 지문을 따로 배우는 Expert + Gate, 그리고 전체 이미지 CNN을 합친 detector.
+3. validation과 비공개 평가의 격차를 설명해 준 평가 방식(leave-one-generator-out, 포기 단위 split).
+4. 안 된 것과 그 이유를 솔직하게 적은 기록 ([docs/lessons-learned.md](docs/lessons-learned.md)).
 
 ## 한눈에 보기
 
-제1회 전국 농과계 대학 농업 AI 경진대회(이미지 미션) 프로젝트입니다. 딸기 사진이 **실제(0)** 인지 **생성·합성·변형(1)** 인지 분류합니다. 학습 데이터가 주어지지 않아서 가짜 이미지 생성 파이프라인부터 만들었습니다. 입문자 2명, 4주.
-
 | | |
 |---|---|
+| **프로젝트** | 딥러닝 입문자 2명, 4주 (2026-09-21 ~ 10-16) |
 | **최종 점수** | 비공개 평가 524장(실제 262 / 가짜 262) **accuracy 0.87** |
 | **모델** | 311M 파라미터, 0.64 GB, Colab T4에서 524장 **152초** (제한: 5분 · 오프라인 · 1GB 이하) |
 | **핵심 아이디어** | 원본 해상도 조각 → 고정 DINOv3 → **생성 방식별 Expert**(attention pooling) + 고주파 잔차까지 보는 전체 이미지 CNN |
@@ -42,6 +55,8 @@
 > 실험당 1회 실행(seed 반복 없음). 음영은 비슷한 실행 사이에서 보인 대략적인 잡음 수준(±0.005)이며 측정된 신뢰구간이 아닙니다. 주황색은 최종 모델에 들어간 아이디어입니다. 전체 표: [docs/experiments.md](docs/experiments.md)
 
 ## 모델 구조
+
+<img src="assets/architecture.png" width="92%" alt="모델 구조">
 
 | 설계 선택 | 이유 |
 |---|---|
