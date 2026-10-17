@@ -23,3 +23,5 @@ data/
 *.pdf
 *.csv
 *.xlsx
+# figures made by assets/make_figures.py (no dataset images)
+!assets/*.png
